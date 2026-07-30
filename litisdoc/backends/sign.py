@@ -4,6 +4,7 @@ from rich.console import Console
 import tempfile
 import datetime
 import os
+import questionary
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
@@ -179,7 +180,6 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
             
             if not chosen_cert_id:
                 if len(cert_options) > 1:
-                    import questionary
                     choices = [c['label'] for c in cert_options]
                     chosen_label = questionary.select(
                         "Foram encontrados múltiplos certificados no Token. Selecione qual deseja utilizar:",
