@@ -11,6 +11,7 @@ dependencies = [
     "reportlab>=4.0.0",
     "pyhanko[pkcs11]>=0.21.0",
     "typing_extensions>=4.0.0",
+    "pymupdf>=1.23.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.9"
