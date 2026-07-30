@@ -1,5 +1,6 @@
 import os
 import tempfile
+import textwrap
 import datetime
 import uuid
 from pathlib import Path
@@ -41,7 +42,11 @@ def _create_cover_page(title: str, ref_hash: str) -> str:
     # Título principal centralizado no meio da página
     c.setFont(f_title, 28)
     y_center = A4_HEIGHT / 2
-    c.drawCentredString(A4_WIDTH / 2, y_center + 40, title.upper())
+    lines = textwrap.wrap(title.upper(), width=35)
+    y_pos = y_center + 40 + (len(lines) - 1) * 35
+    for line in lines:
+        c.drawCentredString(A4_WIDTH / 2, y_pos, line)
+        y_pos -= 35
     
     # Linha elegante
     c.setLineWidth(1)
