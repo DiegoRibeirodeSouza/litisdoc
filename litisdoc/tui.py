@@ -163,9 +163,15 @@ def run_tui():
                     continue
 
                 if selected_item == "🔍  [LOTE] Buscar texto em PDFs desta pasta":
-                    query = questionary.text("Digite o texto ou termo a ser buscado:").ask()
-                    if query:
-                        search_in_pdfs(target_dir, query)
+                    search_type = questionary.select(
+                        "Qual tipo de busca deseja realizar?",
+                        choices=["Busca Simples (Texto exato)", r"Busca Avançada (Regex Ex: \d{3}\.\d{3}\.\d{3}-\d{2})"]
+                    ).ask()
+                    if search_type:
+                        use_regex = "Regex" in search_type
+                        query = questionary.text("Digite o texto ou padrão a ser buscado:").ask()
+                        if query:
+                            search_in_pdfs(target_dir, query, use_regex)
                     continue
 
                 if selected_item == "🖋️  [LOTE] Assinar PDFs desta pasta com Token A3":
@@ -178,6 +184,24 @@ def run_tui():
                     if selected_to_sign:
                         pin = questionary.password("Digite o PIN (senha) do seu Token A3:").ask()
                         if pin:
+                            use_tsa = questionary.confirm("Deseja incluir Carimbo de Tempo (TSA) para atestar a data/hora exata? (Requer Internet)").ask()
+                            tsa_url = None
+                            if use_tsa:
+                                tsa_choice = questionary.select(
+                                    "Escolha o provedor de Carimbo de Tempo (TSA):",
+                                    choices=[
+                                        "http://timestamp.digicert.com (DigiCert - Internacional)",
+                                        "https://freetsa.org/tsr (FreeTSA - Internacional)",
+                                        "http://timestamp.sectigo.com (Sectigo - Internacional)",
+                                        "URL Personalizada (ACT ICP-Brasil)"
+                                    ]
+                                ).ask()
+                                
+                                if tsa_choice == "URL Personalizada (ACT ICP-Brasil)":
+                                    tsa_url = questionary.text("Digite a URL do seu provedor TSA pago (ICP-Brasil):").ask()
+                                elif tsa_choice:
+                                    tsa_url = tsa_choice.split(" ")[0]
+                                    
                             tasks = []
                             for p in selected_to_sign:
                                 in_path = target_dir / p
@@ -185,7 +209,7 @@ def run_tui():
                                 tasks.append((in_path, out_path))
                                 
                             from litisdoc.backends.sign import sign_batch_with_a3
-                            sign_batch_with_a3(tasks, pin)
+                            sign_batch_with_a3(tasks, pin, tsa_url)
                             console.print("[bold green]\nAssinatura em lote finalizada![/bold green]")
                     continue
                 
@@ -349,8 +373,26 @@ def run_tui():
                     elif op == "Assinar com Token A3 (ICP-Brasil)":
                         pin = questionary.password("Digite o PIN (senha) do seu Token A3:").ask()
                         if pin:
+                            use_tsa = questionary.confirm("Deseja incluir Carimbo de Tempo (TSA)? (Requer Internet)").ask()
+                            tsa_url = None
+                            if use_tsa:
+                                tsa_choice = questionary.select(
+                                    "Escolha o provedor de Carimbo de Tempo (TSA):",
+                                    choices=[
+                                        "http://timestamp.digicert.com (DigiCert - Internacional)",
+                                        "https://freetsa.org/tsr (FreeTSA - Internacional)",
+                                        "http://timestamp.sectigo.com (Sectigo - Internacional)",
+                                        "URL Personalizada (ACT ICP-Brasil)"
+                                    ]
+                                ).ask()
+                                
+                                if tsa_choice == "URL Personalizada (ACT ICP-Brasil)":
+                                    tsa_url = questionary.text("Digite a URL do seu provedor TSA pago (ICP-Brasil):").ask()
+                                elif tsa_choice:
+                                    tsa_url = tsa_choice.split(" ")[0]
+                                    
                             out = ops_dir / f"{selected_pdf.stem}_assinado.pdf"
-                            sign_with_a3(selected_pdf, out, pin)
+                            sign_with_a3(selected_pdf, out, pin, tsa_url)
                             selected_pdf = out
                             selected_pdf_name = out.name
                             

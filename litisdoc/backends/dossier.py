@@ -17,8 +17,8 @@ console = Console()
 A4_WIDTH, A4_HEIGHT = A4
 MARGIN = 50
 
-def _create_cover_page(title: str, ref_hash: str) -> str:
-    """Gera uma página de rosto em PDF com título e Hash de referência."""
+def _create_cover_page(title: str, ref_hash: str, input_paths: List[Path]) -> str:
+    """Gera uma página de rosto em PDF com título, Hash de referência e Sumário (TOC)."""
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     c = canvas.Canvas(tmp_file.name, pagesize=A4)
     
@@ -36,35 +36,60 @@ def _create_cover_page(title: str, ref_hash: str) -> str:
         f_title = "Helvetica-Bold"
         f_sub = "Helvetica"
         
-    # Fundo branco e estética minimalista
-    c.setFillColorRGB(0, 0, 0)
+    def draw_header(c_obj):
+        c_obj.setFillColorRGB(0, 0, 0)
+        
+        # Título deslocado para a parte superior (ao invés do centro exato)
+        c_obj.setFont(f_title, 28)
+        y_center = A4_HEIGHT - 180
+        lines = textwrap.wrap(title.upper(), width=25)
+        y_pos = y_center + 40 + (len(lines) - 1) * 35
+        for line in lines:
+            c_obj.drawCentredString(A4_WIDTH / 2, y_pos, line)
+            y_pos -= 35
+        
+        # Linha elegante
+        c_obj.setLineWidth(1)
+        c_obj.line(A4_WIDTH / 2 - 200, y_center + 15, A4_WIDTH / 2 + 200, y_center + 15)
+        
+        # Data de geração e Hash de Referência
+        c_obj.setFont(f_sub, 12)
+        data_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+        c_obj.drawCentredString(A4_WIDTH / 2, y_center - 20, data_str)
+        
+        c_obj.setFont(f_title, 14)
+        c_obj.drawCentredString(A4_WIDTH / 2, y_center - 50, f"Ref*: {ref_hash}")
+        
+        # Aviso para o Tribunal
+        c_obj.setFont(f_sub, 9)
+        notice = "* Código Hash de controle privativo gerado pelo software LitisDoc. Não se confunde com o ID de protocolo do Tribunal."
+        c_obj.drawCentredString(A4_WIDTH / 2, y_center - 80, notice)
+        
+        return y_center - 130 # Retorna a posição Y de onde o sumário pode começar
+
+    current_y = draw_header(c)
     
-    # Título principal centralizado no meio da página
-    c.setFont(f_title, 28)
-    y_center = A4_HEIGHT / 2
-    lines = textwrap.wrap(title.upper(), width=25)
-    y_pos = y_center + 40 + (len(lines) - 1) * 35
-    for line in lines:
-        c.drawCentredString(A4_WIDTH / 2, y_pos, line)
-        y_pos -= 35
-    
-    # Linha elegante
-    c.setLineWidth(1)
-    c.line(A4_WIDTH / 2 - 200, y_center + 15, A4_WIDTH / 2 + 200, y_center + 15)
-    
-    # Data de geração e Hash de Referência
-    c.setFont(f_sub, 12)
-    data_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
-    c.drawCentredString(A4_WIDTH / 2, y_center - 20, data_str)
-    
+    # Desenhar o Sumário
     c.setFont(f_title, 14)
-    c.drawCentredString(A4_WIDTH / 2, y_center - 50, f"Ref*: {ref_hash}")
+    c.drawString(MARGIN, current_y, "Índice de Anexos:")
+    current_y -= 25
     
-    # Aviso para o Tribunal
-    c.setFont(f_sub, 9)
-    notice = "* Código Hash de controle privativo gerado pelo software LitisDoc. Não se confunde com o ID de protocolo do Tribunal."
-    c.drawCentredString(A4_WIDTH / 2, y_center - 80, notice)
+    c.setFont(f_sub, 12)
     
+    for i, path in enumerate(input_paths, start=1):
+        if current_y < 50:
+            c.showPage()
+            c.setFont(f_sub, 12)
+            current_y = A4_HEIGHT - MARGIN
+            
+        # Truncar nomes muito grandes para não passarem da margem direita
+        display_name = f"{i}. {path.name}"
+        if len(display_name) > 85:
+            display_name = display_name[:82] + "..."
+            
+        c.drawString(MARGIN + 10, current_y, display_name)
+        current_y -= 20
+        
     c.showPage()
     c.save()
     return tmp_file.name
@@ -102,9 +127,10 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
         final_doc = fitz.open()
         
         # 1. Inserir a Capa
-        cover_path = _create_cover_page(title, ref_hash)
+        cover_path = _create_cover_page(title, ref_hash, input_paths)
         cover_doc = fitz.open(cover_path)
         final_doc.insert_pdf(cover_doc)
+        cover_pages = len(cover_doc)
         cover_doc.close()
         os.remove(cover_path)
         
@@ -112,12 +138,18 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
         usable_w = A4_WIDTH - (2 * MARGIN)
         usable_h = A4_HEIGHT - (2 * MARGIN)
         
+        toc = []
+        current_page_index = cover_pages + 1  # 1-based index for TOC
+        
         for file_path in input_paths:
             if not file_path.exists():
                 console.print(f"[bold yellow]Aviso:[/bold yellow] Arquivo não encontrado: {file_path}")
                 continue
                 
             ext = file_path.suffix.lower()
+            
+            # Adiciona a referência no Bookmark Lateral
+            toc.append([1, file_path.name, current_page_index])
             
             if ext in ['.pdf']:
                 src_doc = fitz.open(file_path)
@@ -127,6 +159,7 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                     
                     # Cria nova página A4 em branco no documento final
                     new_page = final_doc.new_page(width=A4_WIDTH, height=A4_HEIGHT)
+                    current_page_index += 1
                     
                     # Calcula o box para colar a página
                     target_rect = _fit_rect(src_rect.width, src_rect.height, usable_w, usable_h)
@@ -149,6 +182,8 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                 src_rect = img_doc[0].rect
                 
                 new_page = final_doc.new_page(width=A4_WIDTH, height=A4_HEIGHT)
+                current_page_index += 1
+                
                 target_rect = _fit_rect(src_rect.width, src_rect.height, usable_w, usable_h)
                 
                 # Inserimos os bytes da imagem
@@ -166,16 +201,19 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                 
         # 3. Paginação (Ignorando a capa)
         total_pages = len(final_doc)
-        total_content_pages = total_pages - 1
-        for i in range(1, total_pages):
+        total_content_pages = total_pages - cover_pages
+        for i in range(cover_pages, total_pages):
             page = final_doc[i]
-            page_text = f"Página {i} de {total_content_pages}"
+            page_text = f"Página {i - cover_pages + 1} de {total_content_pages}"
             
             # Centralizado no rodapé
             text_len = 70 # Estimativa de largura para centralizar
             page.insert_text(fitz.Point((A4_WIDTH / 2) - (text_len / 2), A4_HEIGHT - 30), 
                              page_text, fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
                 
+        # Aplica o TOC (Bookmarks)
+        final_doc.set_toc(toc)
+        
         # 4. Salvar o documento final
         final_doc.save(final_output)
         final_doc.close()

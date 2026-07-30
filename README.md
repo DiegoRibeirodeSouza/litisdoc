@@ -9,7 +9,7 @@
 O LitisDoc consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF, ReportLab) em uma interface central unificada.
 
 ### 🔄 Operações em Lote
-*   **Gerador de Dossiês (Com Pré-Referenciação Hash):** Junte múltiplos PDFs e Imagens bagunçados em um Dossiê impecável. O sistema cria uma capa elegante, centraliza qualquer anexo em folhas A4 padronizadas, e injeta uma **Hash Criptográfica Curta** (ex: `A7F92B...`) em todas as páginas, permitindo que você cite os anexos na sua petição com precisão cirúrgica antes mesmo do protocolo no PJe.
+*   **Gerador de Dossiês (Com Pré-Referenciação Hash):** Junte múltiplos PDFs e Imagens bagunçados em um Dossiê impecável. O sistema cria uma capa elegante com **Sumário (TOC)** automático, centraliza qualquer anexo em folhas A4 padronizadas, injeta *Bookmarks* de navegação, e insere uma **Hash Criptográfica Curta** (ex: `A7F92B...`) em todas as páginas, permitindo que você cite os anexos na sua petição com precisão cirúrgica antes mesmo do protocolo no PJe.
 *   **Juntar PDFs (Merge):** Selecione múltiplos PDFs de uma pasta e funda todos eles em um único arquivo, escolhendo a ordem desejada.
 *   **Imagens para PDF:** Converta múltiplos arquivos `.jpg` e `.png` diretamente para um arquivo PDF unificado.
 
@@ -20,8 +20,8 @@ O LitisDoc consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF
 *   **Marca D'água:** Insira textos (como "CONFIDENCIAL", "RASCUNHO") de ponta a ponta no documento de forma transparente.
 
 ### 🏛️ Adequação Jurídica / Processual
-*   **Assinatura Digital (Token A3 / ICP-Brasil):** Assine seus PDFs usando tokens físicos ou smartcards com uma estrutura criptográfica perfeitamente compatível com a validação do ITI (Governo Brasileiro). A assinatura inclui também um **carimbo visual automático** no rodapé da última página.
-*   **Verificador de Assinaturas:** Analise e dissecque as assinaturas digitais contidas em qualquer PDF usando o `pdfsig` nativo, identificando quem assinou e verificando a integridade da criptografia.
+*   **Assinatura Digital (Token A3 / ICP-Brasil):** Assine seus PDFs usando tokens físicos ou smartcards com uma estrutura criptográfica perfeitamente compatível com a validação do ITI (Governo Brasileiro). Suporta múltiplas assinaturas no mesmo documento, diferentes estilos visuais, e inserção de **Carimbo de Tempo (TSA - PAdES)** para atestar a data/hora irrefutável.
+*   **Verificador de Assinaturas:** Analise e dissecque as assinaturas digitais contidas em qualquer PDF usando o `pdfsig` nativo, identificando quem assinou, verificando a integridade da criptografia e validando Carimbos de Tempo (RFC 3161) integrados.
 *   **Paginação Sequencial (Bates Stamping):** Numere páginas automaticamente (ex: "Fl. 01", "Fl. 02") no canto inferior direito para organização de processos e anexos.
 *   **Converter para PDF/A:** Transforme documentos comuns no padrão internacional de Arquivamento de Longo Prazo, exigido por sistemas como **PJe** e **e-SAJ**, embutindo todas as fontes e garantindo conformidade.
 *   **Comparar com outro PDF (Diff):** Compare duas minutas de contrato! O app gera um arquivo destacando as diferenças visuais (adicionadas ou removidas) entre a versão 1 e a versão 2.
@@ -34,6 +34,7 @@ O LitisDoc consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF
 *   **Compressão:** Reduza drasticamente o tamanho do arquivo para conseguir enviá-lo por e-mail ou anexá-lo em sistemas judiciais. Níveis disponíveis: `screen` (Mínimo), `ebook`, `printer` e `prepress`.
 
 ### 🔍 Extração e Inteligência
+*   **Busca em Lote (Regex):** Pesquise por textos exatos ou padrões complexos (Expressões Regulares, ex: CPFs ou CNPJs) em todos os PDFs de uma pasta simultaneamente.
 *   **Aplicar OCR:** Transforme PDFs "mortos" (imagens escaneadas) em documentos com texto pesquisável e selecionável.
 *   **Renderizar para Imagens:** Transforme cada página do seu PDF em um `.jpg` independente (útil quando tribunais recusam formatos de texto).
 *   **Extrair Texto:** Retire apenas o texto bruto do documento preservando o layout original.

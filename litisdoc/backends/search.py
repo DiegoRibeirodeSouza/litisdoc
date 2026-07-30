@@ -6,11 +6,13 @@ from rich.console import Console
 
 console = Console()
 
-def search_in_pdfs(target_dir: Path, query: str) -> None:
+def search_in_pdfs(target_dir: Path, query: str, use_regex: bool = False) -> None:
     """Busca um texto em todos os PDFs de um diretório usando pdfgrep."""
     check_dependency("pdfgrep", "pdfgrep")
     
-    cmd = f'pdfgrep -r -i -n --color=always "{query}" "{target_dir}"'
+    # -F para string fixa (Busca simples), -P para Perl-Regex (Busca Avançada)
+    regex_flag = "-P" if use_regex else "-F"
+    cmd = f'pdfgrep -r -i -n {regex_flag} --color=always "{query}" "{target_dir}"'
     
     console.print(f"[bold cyan]🔍 Buscando por '{query}' em '{target_dir.name}'...[/bold cyan]\n")
     try:

@@ -107,7 +107,7 @@ def _create_cmu_stamp(signer_name: str) -> str:
     c.save()
     return tmp_file.name
 
-def sign_batch_with_a3(tasks: list, pin: str) -> None:
+def sign_batch_with_a3(tasks: list, pin: str, tsa_url: str = None) -> None:
     """Assina um ou múltiplos PDFs em lote usando Token A3 (PKCS#11) via pyHanko, reutilizando a sessão."""
     try:
         from pyhanko.sign import signers
@@ -259,10 +259,16 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         signer_kwargs['cert_id'] = chosen_cert_id
                     signer = PKCS11Signer(**signer_kwargs)
 
-                    meta = signers.PdfSignatureMetadata(
-                        field_name=dynamic_sig_name,
-                        reason='Assinado digitalmente via LitisDoc',
-                    )
+                    from pyhanko.sign.fields import SigSeedSubFilter
+                    
+                    meta_kwargs = {
+                        'field_name': dynamic_sig_name,
+                        'reason': 'Assinado digitalmente via LitisDoc'
+                    }
+                    if tsa_url:
+                        meta_kwargs['subfilter'] = SigSeedSubFilter.PADES
+                        
+                    meta = signers.PdfSignatureMetadata(**meta_kwargs)
 
                     with open(input_pdf, 'rb') as doc_in:
                         w = IncrementalPdfFileWriter(doc_in)
@@ -284,11 +290,17 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                             new_field_spec = SigFieldSpec(sig_field_name=dynamic_sig_name, on_page=-1, box=(0,0,0,0))
 
                         
+                        timestamper = None
+                        if tsa_url:
+                            from pyhanko.sign.timestamps import HTTPTimeStamper
+                            timestamper = HTTPTimeStamper(tsa_url)
+                        
                         pdf_signer = PdfSigner(
                             signature_meta=meta,
                             signer=signer,
                             stamp_style=stamp_style,
-                            new_field_spec=new_field_spec
+                            new_field_spec=new_field_spec,
+                            timestamper=timestamper
                         )
                         
                         # Usar um buffer em memória para prevenir corrompimento caso o token falhe no meio da operação
@@ -317,5 +329,5 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
         console.print(f"[bold red]Falha na comunicação com o Token:[/bold red] {e}")
         console.print("Verifique se o token A3 está bem conectado e se a senha está correta.")
 
-def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
-    sign_batch_with_a3([(input_pdf, output_pdf)], pin)
+def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str, tsa_url: str = None) -> None:
+    sign_batch_with_a3([(input_pdf, output_pdf)], pin, tsa_url)
