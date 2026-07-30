@@ -1,9 +1,11 @@
 import os
+import uuid
 from pathlib import Path
 from rich.console import Console
 import tempfile
 import datetime
 import os
+import uuid
 import questionary
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -250,6 +252,7 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
 
             for input_pdf, output_pdf in tasks:
                 try:
+                    dynamic_sig_name = f'Signature_{uuid.uuid4().hex[:8]}'
                     # Instanciar o signer e meta a cada arquivo para evitar 'stale state' no driver PKCS11
                     signer_kwargs = {'pkcs11_session': session, 'use_raw_mechanism': True}
                     if chosen_cert_id:
@@ -257,7 +260,7 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                     signer = PKCS11Signer(**signer_kwargs)
 
                     meta = signers.PdfSignatureMetadata(
-                        field_name='Signature1',
+                        field_name=dynamic_sig_name,
                         reason='Assinado digitalmente via LitisDoc',
                     )
 
@@ -266,19 +269,19 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         
                         if "Completa" in chosen_style:
                             sig_box = (97, 20, 497, 220)
-                            new_field_spec = SigFieldSpec(sig_field_name='Signature1', on_page=-1, box=sig_box)
+                            new_field_spec = SigFieldSpec(sig_field_name=dynamic_sig_name, on_page=-1, box=sig_box)
                         elif "Vertical" in chosen_style:
                             sig_box = (570, 50, 595, 650) # margem direita
-                            new_field_spec = SigFieldSpec(sig_field_name='Signature1', on_page=-1, box=sig_box)
+                            new_field_spec = SigFieldSpec(sig_field_name=dynamic_sig_name, on_page=-1, box=sig_box)
                         elif "CMU" in chosen_style:
                             sig_box = (72, 20, 522, 70) # centralizado inferior
-                            new_field_spec = SigFieldSpec(sig_field_name='Signature1', on_page=-1, box=sig_box)
+                            new_field_spec = SigFieldSpec(sig_field_name=dynamic_sig_name, on_page=-1, box=sig_box)
                         elif "Padrão" in chosen_style:
                             sig_box = (10, 75, 585, 95)
-                            new_field_spec = SigFieldSpec(sig_field_name='Signature1', on_page=-1, box=sig_box)
+                            new_field_spec = SigFieldSpec(sig_field_name=dynamic_sig_name, on_page=-1, box=sig_box)
                         else:
                             # Oculta
-                            new_field_spec = SigFieldSpec(sig_field_name='Signature1', on_page=-1, box=(0,0,0,0))
+                            new_field_spec = SigFieldSpec(sig_field_name=dynamic_sig_name, on_page=-1, box=(0,0,0,0))
 
                         
                         pdf_signer = PdfSigner(
