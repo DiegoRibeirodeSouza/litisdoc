@@ -18,7 +18,7 @@ def _create_dynamic_stamp(signer_name: str) -> str:
     
     # Tamanho mais compacto para caber em PDFs com margens curtas (ex: páginas de 453pt)
     box_width = 400
-    box_height = 100
+    box_height = 200
     c = canvas.Canvas(tmp_file.name, pagesize=(box_width, box_height))
     
     # Centralizado na nova caixa
@@ -45,7 +45,7 @@ def _create_dynamic_stamp(signer_name: str) -> str:
         img = Image.open(img_path)
         img_w, img_h = img.size
         aspect = img_h / float(img_w)
-        target_w = 90
+        target_w = 153  # Aumentado em 70% (antes 90)
         target_h = target_w * aspect
         c.drawImage(img_path, x_center - target_w/2, base_y + 10, width=target_w, height=target_h, mask='auto')
     
@@ -209,7 +209,7 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         w = IncrementalPdfFileWriter(doc_in)
                         
                         if is_diego:
-                            sig_box = (97, 20, 497, 120)
+                            sig_box = (97, 20, 497, 220)
                         else:
                             sig_box = (10, 75, 585, 95)
                             
