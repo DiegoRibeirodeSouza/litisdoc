@@ -209,7 +209,7 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         w = IncrementalPdfFileWriter(doc_in)
                         
                         if is_diego:
-                            sig_box = (30, 20, 430, 120)
+                            sig_box = (97, 20, 497, 120)
                         else:
                             sig_box = (10, 75, 585, 95)
                             
